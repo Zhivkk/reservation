@@ -5,8 +5,11 @@ import app.model.Reservation;
 import app.model.TableEntity;
 import app.repository.ReservationRepository;
 import app.repository.TableRepository;
+import app.web.DTO.ReservationRequest;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
@@ -19,34 +22,36 @@ public class ReservationService {
 
     private final TableRepository tableRepository;
     private final ReservationRepository reservationRepository;
-    private final RestTemplate restTemplate;
 
     private static final String EMAIL_API_URL = "https://external-email-api.com/send";
 
     public ReservationService(TableRepository tableRepository, ReservationRepository reservationRepository, RestTemplate restTemplate) {
         this.tableRepository = tableRepository;
         this.reservationRepository = reservationRepository;
-        this.restTemplate = restTemplate;
     }
 
-    public Optional<Reservation> createReservation(String userName, String userPhone, String userEmail, LocalDate date, int guests, String message) {
-        List<TableEntity> availableTables = tableRepository.findByCapacityGreaterThanEqualAndIsAvailableTrue(guests);
+    @Transactional
+    public Optional<Reservation> createReservation(@RequestBody ReservationRequest reservationRequest) {
+        List<TableEntity> availableTables = tableRepository.findByCapacityGreaterThanEqualAndIsAvailableTrue(reservationRequest.getGuests());
         if (availableTables.isEmpty()) {
             return Optional.empty();
         }
+
         TableEntity table = availableTables.get(0);
         table.setAvailable(false);
         tableRepository.save(table);
 
         Reservation reservation = new Reservation();
         reservation.setTableId(table.getId());
-        reservation.setUserName(userName);
-        reservation.setUserPhone(userPhone);
-        reservation.setUserEmail(userEmail);
-        reservation.setDate(date);
-        reservation.setGuests(guests);
-        reservation.setMessage(message);
-        reservationRepository.save(reservation);
+        reservation.setUserName(reservationRequest.getUserName());
+        reservation.setUserPhone(reservationRequest.getUserPhone());
+        reservation.setUserEmail(reservationRequest.getUserEmail());
+        reservation.setDate(LocalDate.now());
+        reservation.setGuests(reservationRequest.getGuests());
+        reservation.setMessage(reservationRequest.getMessage());
+
+        table.setAvailable(false); //запазваме масата
+        reservationRepository.save(reservation); //Записваме резервацията
 
         return Optional.of(reservation);
     }

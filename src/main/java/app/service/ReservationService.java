@@ -8,6 +8,7 @@ import app.repository.TableRepository;
 import app.web.DTO.ReservationRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.client.RestTemplate;
@@ -46,7 +47,7 @@ public class ReservationService {
         reservation.setUserName(reservationRequest.getUserName());
         reservation.setUserPhone(reservationRequest.getUserPhone());
         reservation.setUserEmail(reservationRequest.getUserEmail());
-        reservation.setDate(LocalDate.now());
+        reservation.setDate(reservationRequest.getDate());
         reservation.setGuests(reservationRequest.getGuests());
         reservation.setMessage(reservationRequest.getMessage());
 
@@ -54,6 +55,16 @@ public class ReservationService {
         reservationRepository.save(reservation); //Записваме резервацията
 
         return Optional.of(reservation);
+    }
+
+    @Scheduled(cron = "0 0 0 * * ?") // Runs at midnight
+    public void deleteOldReservations () {
+       reservationRepository.findAll().forEach(reservation -> {
+           if (reservation.getDate().isBefore(LocalDate.now().minusDays(1))) {
+               reservationRepository.delete(reservation);
+               tableRepository.findById(reservation.getTableId()).ifPresent(table -> table.setAvailable(true));
+           }
+       });
     }
 
 }

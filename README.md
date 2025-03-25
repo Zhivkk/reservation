@@ -1,1 +1,1 @@
-It is API for organize reservations in the restaurant
+It is a microservica to organize reservations in the restaurant

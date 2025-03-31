@@ -1,7 +1,6 @@
 package app.repository;
 
 import app.model.Reservation;
-import app.model.TableEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

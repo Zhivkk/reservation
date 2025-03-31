@@ -1,13 +1,11 @@
 package app.service;
 
-import app.EmailClient;
 import app.model.Reservation;
 import app.model.TableEntity;
 import app.repository.ReservationRepository;
 import app.repository.TableRepository;
 import app.web.DTO.ReservationRequest;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,7 +13,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -51,13 +48,13 @@ public class ReservationService {
         reservation.setGuests(reservationRequest.getGuests());
         reservation.setMessage(reservationRequest.getMessage());
 
-        table.setAvailable(false); //запазваме масата
-        reservationRepository.save(reservation); //Записваме резервацията
+        table.setAvailable(false);
+        reservationRepository.save(reservation);
 
         return Optional.of(reservation);
     }
 
-    @Scheduled(cron = "0 0 0 * * ?") // Runs at midnight
+    @Scheduled(cron = "0 0 0 * * ?")
     public void deleteOldReservations () {
        reservationRepository.findAll().forEach(reservation -> {
            if (reservation.getDate().isBefore(LocalDate.now().minusDays(1))) {
